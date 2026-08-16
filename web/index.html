@@ -5,37 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!--
     Set this to your Railway backend's URL after you deploy it, e.g.
-    "https://hackathon-tracker-api.up.railway.app". Leave empty during
-    local development to fall back to a same-origin "/api/hackathons"
-    (useful if you're running the old combined FastAPI+static setup).
+    "https://hackathon-tracker-production.up.railway.app". Leave empty
+    during local development to fall back to a same-origin
+    "/api/hackathons" request.
   -->
   <meta name="api-base-url" content="https://hackathon-tracker-production.up.railway.app" />
-  <title>Hackathon Tracker</title>
+  <title>Hackathon Tracker — Live Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <h1>Hackathon Tracker</h1>
-      <p id="subtitle" class="subtitle">Loading…</p>
+  <div class="board">
+
+    <header class="board-header">
+      <div class="board-header-row">
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true"></span>
+          <h1>HACKATHON&nbsp;TRACKER</h1>
+        </div>
+        <div class="clock" id="clock" aria-label="Current time">--:--:--</div>
+      </div>
+      <p id="subtitle" class="subtitle">SCANNING FEEDS&hellip;</p>
+    </header>
+
+    <div id="banner" class="banner" hidden role="status"></div>
+
+    <nav class="gates" id="gates" aria-label="Filter by source">
+      <button class="gate active" data-source="all" type="button">ALL</button>
+      <button class="gate" data-source="Devpost" type="button">DEVPOST</button>
+      <button class="gate" data-source="MLH" type="button">MLH</button>
+      <button class="gate" data-source="Unstop" type="button">UNSTOP</button>
+      <button class="gate" data-source="HackerEarth" type="button">HACKEREARTH</button>
+    </nav>
+
+    <div class="board-table" role="table" aria-label="Open hackathons">
+      <div class="board-table-head" role="row">
+        <span role="columnheader">Deadline</span>
+        <span role="columnheader">Event</span>
+        <span role="columnheader">Source</span>
+        <span role="columnheader">Prize</span>
+      </div>
+      <div id="list" class="board-rows" role="rowgroup"></div>
+      <div id="empty" class="board-empty" hidden>
+        NO EVENTS ON THE BOARD RIGHT NOW.<br />CHECK BACK SHORTLY.
+      </div>
+      <div id="loading" class="board-loading">SCANNING FEEDS&hellip;</div>
     </div>
-  </header>
 
-  <main class="container">
-    <div id="banner" class="new-banner" hidden></div>
+    <footer class="board-footer">
+      <span>DEV = Devpost &nbsp;·&nbsp; MLH = MLH &nbsp;·&nbsp; UNS = Unstop &nbsp;·&nbsp; HKE = HackerEarth</span>
+    </footer>
 
-    <div class="filters">
-      <button class="filter-chip active" data-source="all">All</button>
-      <button class="filter-chip" data-source="Devpost">Devpost</button>
-      <button class="filter-chip" data-source="MLH">MLH</button>
-      <button class="filter-chip" data-source="Unstop">Unstop</button>
-      <button class="filter-chip" data-source="HackerEarth">HackerEarth</button>
-    </div>
-
-    <div id="list" class="list"></div>
-    <div id="empty" class="empty" hidden>No hackathons found right now.</div>
-    <div id="loading" class="loading">Fetching hackathons…</div>
-  </main>
+  </div>
 
   <script src="app.js"></script>
 </body>
