@@ -1,6 +1,6 @@
 # Hackathon Tracker
 
-A live board of open hackathons pulled from **Devpost**, **MLH**, **Unstop**, and **HackerEarth** — one place to scan deadlines instead of checking four sites.
+A live board of open hackathons pulled from **Devpost**, **MLH** and **Unstop** — one place to scan deadlines instead of checking four sites.
 
 **Live:** (https://hackatrack.netlify.app)
 
