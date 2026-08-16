@@ -1,0 +1,10 @@
+[build]
+  publish = "web"
+  command = ""
+
+# SPA-style fallback isn't needed here (single static page), but this
+# keeps direct navigation to / working cleanly.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
