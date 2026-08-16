@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!--
+    Set this to your Railway backend's URL after you deploy it, e.g.
+    "https://hackathon-tracker-api.up.railway.app". Leave empty during
+    local development to fall back to a same-origin "/api/hackathons"
+    (useful if you're running the old combined FastAPI+static setup).
+  -->
+  <meta name="api-base-url" content="" />
+  <title>Hackathon Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <h1>Hackathon Tracker</h1>
+      <p id="subtitle" class="subtitle">Loading…</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="banner" class="new-banner" hidden></div>
+
+    <div class="filters">
+      <button class="filter-chip active" data-source="all">All</button>
+      <button class="filter-chip" data-source="Devpost">Devpost</button>
+      <button class="filter-chip" data-source="MLH">MLH</button>
+      <button class="filter-chip" data-source="Unstop">Unstop</button>
+      <button class="filter-chip" data-source="HackerEarth">HackerEarth</button>
+    </div>
+
+    <div id="list" class="list"></div>
+    <div id="empty" class="empty" hidden>No hackathons found right now.</div>
+    <div id="loading" class="loading">Fetching hackathons…</div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
