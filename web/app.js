@@ -1,5 +1,7 @@
 const REFRESH_INTERVAL_MS = 3 * 60 * 1000; // poll every 3 minutes
 const SEEN_KEY = "hackathon_tracker_seen_ids";
+const SOURCE_CODES = { Devpost: "DEV", MLH: "MLH", Unstop: "UNS", HackerEarth: "HKE" };
+const URGENT_RE = /\b([0-3])\s*days?\s*left\b|\btoday\b|\btomorrow\b/i;
 
 // Backend base URL comes from the <meta name="api-base-url"> tag in
 // index.html — set it to your Railway URL once you've deployed the
@@ -18,6 +20,20 @@ const emptyEl = document.getElementById("empty");
 const loadingEl = document.getElementById("loading");
 const subtitleEl = document.getElementById("subtitle");
 const bannerEl = document.getElementById("banner");
+const clockEl = document.getElementById("clock");
+
+// ---------------------------------------------------------------------
+// Live clock — the board's signature "it's alive" element.
+// ---------------------------------------------------------------------
+function tickClock() {
+  const now = new Date();
+  const hh = String(now.getUTCHours()).padStart(2, "0");
+  const mm = String(now.getUTCMinutes()).padStart(2, "0");
+  const ss = String(now.getUTCSeconds()).padStart(2, "0");
+  clockEl.textContent = `${hh}:${mm}:${ss} UTC`;
+}
+tickClock();
+setInterval(tickClock, 1000);
 
 function getSeenIds() {
   try {
@@ -29,6 +45,33 @@ function getSeenIds() {
 
 function saveSeenIds(ids) {
   localStorage.setItem(SEEN_KEY, JSON.stringify([...ids]));
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function relativeTime(date) {
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (seconds < 60) return "just now";
+  const mins = Math.floor(seconds / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  return `${hrs}h ago`;
+}
+
+function buildNewFlap() {
+  const wrap = document.createElement("span");
+  wrap.className = "new-flap";
+  "NEW".split("").forEach((ch, i) => {
+    const s = document.createElement("span");
+    s.textContent = ch;
+    s.style.animationDelay = `${i * 60}ms`;
+    wrap.appendChild(s);
+  });
+  return wrap;
 }
 
 function render() {
@@ -46,33 +89,63 @@ function render() {
   }
   emptyEl.hidden = true;
 
-  for (const h of filtered) {
+  filtered.forEach((h, index) => {
     const isNew = !seen.has(h.id);
-    const card = document.createElement("a");
-    card.className = "card";
-    card.href = h.url || "#";
-    card.target = "_blank";
-    card.rel = "noopener noreferrer";
+    const deadlineText = h.deadline || "TBD";
+    const isUrgent = URGENT_RE.test(deadlineText);
+    const code = SOURCE_CODES[h.source] || h.source?.slice(0, 3).toUpperCase();
+    const theme = Array.isArray(h.themes) && h.themes.length ? h.themes[0] : null;
 
-    card.innerHTML = `
-      <div class="card-header">
-        <div>
-          <span class="badge ${h.source}">${h.source}</span>
-          ${isNew ? '<span class="new-tag">NEW</span>' : ""}
-        </div>
-        ${h.prize ? `<span class="prize">${escapeHtml(h.prize)}</span>` : ""}
-      </div>
-      <p class="title">${escapeHtml(h.title || "Untitled")}</p>
-      ${h.deadline ? `<p class="deadline">${escapeHtml(h.deadline)}</p>` : ""}
-    `;
-    listEl.appendChild(card);
-  }
-}
+    const row = document.createElement("a");
+    row.className = "row";
+    row.href = h.url || "#";
+    row.target = "_blank";
+    row.rel = "noopener noreferrer";
+    row.style.animationDelay = `${Math.min(index, 14) * 35}ms`;
 
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
+    const deadlineEl = document.createElement("span");
+    deadlineEl.className = "row-deadline" + (isUrgent ? " urgent" : "");
+    deadlineEl.textContent = deadlineText;
+
+    const mainEl = document.createElement("span");
+    mainEl.className = "row-main";
+    const titleEl = document.createElement("span");
+    titleEl.className = "row-title";
+    titleEl.textContent = h.title || "Untitled";
+    mainEl.appendChild(titleEl);
+    if (isNew || theme) {
+      const metaLine = document.createElement("span");
+      metaLine.className = "row-theme";
+      metaLine.style.display = "flex";
+      metaLine.style.alignItems = "center";
+      metaLine.style.gap = "4px";
+      if (isNew) metaLine.appendChild(buildNewFlap());
+      if (theme) {
+        const themeText = document.createElement("span");
+        themeText.textContent = escapeHtml(theme);
+        metaLine.appendChild(themeText);
+      }
+      mainEl.appendChild(metaLine);
+    }
+
+    const sourceEl = document.createElement("span");
+    sourceEl.className = "row-source";
+    const codeEl = document.createElement("span");
+    codeEl.className = `code ${h.source}`;
+    codeEl.textContent = code;
+    sourceEl.appendChild(codeEl);
+
+    const prizeEl = document.createElement("span");
+    prizeEl.className = "row-prize";
+    prizeEl.textContent = h.prize ? h.prize : "—";
+
+    row.appendChild(deadlineEl);
+    row.appendChild(mainEl);
+    row.appendChild(sourceEl);
+    row.appendChild(prizeEl);
+
+    listEl.appendChild(row);
+  });
 }
 
 function markAllSeen() {
@@ -96,27 +169,26 @@ async function loadHackathons({ isPoll = false } = {}) {
     loadingEl.hidden = true;
 
     const updated = new Date(data.last_updated);
-    subtitleEl.textContent = `${data.count} listed · updated ${updated.toLocaleTimeString()}`;
+    subtitleEl.textContent = `${data.count} EVENTS TRACKED · UPDATED ${relativeTime(updated).toUpperCase()}`;
 
     if (isPoll && newOnes.length > 0) {
       bannerEl.hidden = false;
-      bannerEl.textContent = `${newOnes.length} new hackathon${
-        newOnes.length > 1 ? "s" : ""
-      } just showed up — tap to mark as seen`;
+      bannerEl.textContent = `${newOnes.length} NEW EVENT${
+        newOnes.length > 1 ? "S" : ""
+      } JUST LANDED — TAP TO CLEAR`;
       bannerEl.onclick = markAllSeen;
     }
 
     render();
   } catch (e) {
-    loadingEl.textContent =
-      "Couldn't load hackathons right now. Retrying shortly…";
+    loadingEl.textContent = "FEED SIGNAL LOST. RETRYING\u2026";
     loadingEl.hidden = false;
   }
 }
 
-document.querySelectorAll(".filter-chip").forEach((chip) => {
+document.querySelectorAll(".gate").forEach((chip) => {
   chip.addEventListener("click", () => {
-    document.querySelectorAll(".filter-chip").forEach((c) => c.classList.remove("active"));
+    document.querySelectorAll(".gate").forEach((c) => c.classList.remove("active"));
     chip.classList.add("active");
     activeFilter = chip.dataset.source;
     render();
