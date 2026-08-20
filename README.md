@@ -96,4 +96,4 @@ Basic liveness check, returns `{"status": "ok", "time": "..."}`.
 
 ## License
 
-MIT (or update this to match your actual license).
+MIT 
