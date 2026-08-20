@@ -32,13 +32,22 @@
 
     <div id="banner" class="banner" hidden role="status"></div>
 
-    <nav class="gates" id="gates" aria-label="Filter by source">
-      <button class="gate active" data-source="all" type="button">ALL</button>
-      <button class="gate" data-source="Devpost" type="button">DEVPOST</button>
-      <button class="gate" data-source="MLH" type="button">MLH</button>
-      <button class="gate" data-source="Unstop" type="button">UNSTOP</button>
-      <button class="gate" data-source="HackerEarth" type="button">HACKEREARTH</button>
-    </nav>
+    <div class="controls-row">
+      <nav class="gates" id="gates" aria-label="Filter by source">
+        <button class="gate active" data-source="all" type="button">ALL</button>
+        <button class="gate" data-source="Devpost" type="button">DEVPOST</button>
+        <button class="gate" data-source="MLH" type="button">MLH</button>
+        <button class="gate" data-source="Unstop" type="button">UNSTOP</button>
+      </nav>
+      <label class="sort-control" for="sort-select">
+        SORT
+        <select id="sort-select">
+          <option value="deadline">Deadline (soonest)</option>
+          <option value="prize">Prize (highest)</option>
+          <option value="name">Name (A–Z)</option>
+        </select>
+      </label>
+    </div>
 
     <div class="board-table" role="table" aria-label="Open hackathons">
       <div class="board-table-head" role="row">
@@ -55,9 +64,38 @@
     </div>
 
     <footer class="board-footer">
-      <span>DEV = Devpost &nbsp;·&nbsp; MLH = MLH &nbsp;·&nbsp; UNS = Unstop &nbsp;·&nbsp; HKE = HackerEarth</span>
+      <span>DEV = Devpost &nbsp;·&nbsp; MLH = MLH &nbsp;·&nbsp; UNS = Unstop</span>
     </footer>
 
+  </div>
+
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" id="modal-close" type="button" aria-label="Close details">✕</button>
+      <span class="modal-source-code" id="modal-source-code"></span>
+      <h2 class="modal-title" id="modal-title"></h2>
+      <dl class="modal-fields">
+        <div class="modal-field">
+          <dt>Deadline</dt>
+          <dd id="modal-deadline"></dd>
+        </div>
+        <div class="modal-field">
+          <dt>Prize</dt>
+          <dd id="modal-prize"></dd>
+        </div>
+        <div class="modal-field" id="modal-themes-row">
+          <dt>Themes</dt>
+          <dd id="modal-themes"></dd>
+        </div>
+        <div class="modal-field">
+          <dt>Source</dt>
+          <dd id="modal-source"></dd>
+        </div>
+      </dl>
+      <a id="modal-link" class="modal-link" href="#" target="_blank" rel="noopener noreferrer">
+        OPEN EVENT PAGE ↗
+      </a>
+    </div>
   </div>
 
   <script src="app.js"></script>
