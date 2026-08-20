@@ -1,8 +1,8 @@
 """
 Hackathon Tracker — API
 ========================
-Scrapes Devpost/MLH/Unstop/HackerEarth, caches the results in memory, and
-serves them via /api/hackathons.
+Scrapes Devpost/MLH/Unstop, caches the results in memory, and serves them
+via /api/hackathons.
 
 This is API-only: the frontend (index.html/app.js/style.css) is deployed
 separately as a static site (e.g. on Netlify) and talks to this service
@@ -10,9 +10,6 @@ over the network. See DEPLOY.md for the Netlify + Railway setup.
 
 Run locally:
     pip install -r requirements.txt
-    playwright install --with-deps chromium   # one-time; needed for the
-                                               # HackerEarth scraper, which
-                                               # renders a JS-only page
     uvicorn api:app --host 0.0.0.0 --port 8000
 Then open http://localhost:8000/api/hackathons in a browser.
 """
@@ -222,82 +219,11 @@ def fetch_unstop():
     return results
 
 
-HACKEREARTH_CARD_HREF_RE = re.compile(
-    r"^(?:https://www\.hackerearth\.com)?(/challenges/(?:hackathon|competitive|college|hiring)/[\w\-]+/?)$"
-)
-
-
-def fetch_hackerearth():
-    # Unlike MLH/Unstop, HackerEarth's /challenges/ listing has NO static-HTML
-    # or public JSON fallback we could find: a plain requests.get() returns an
-    # empty React shell (verified directly), the "server-rendered" looking
-    # sub-pages 404/500, and their public API requires an OAuth client secret.
-    # Individual challenge pages (e.g. /challenges/hackathon/some-slug/) *are*
-    # server-rendered, but the listing page that links to them isn't - so
-    # there's no way to get the current list without executing JS.
-    # We use Playwright (headless Chromium) here instead of requests+BS4.
-    # Requires: `pip install playwright` and `playwright install --with-deps chromium`
-    # (see requirements.txt / README for the one-time setup step).
-    url = "https://www.hackerearth.com/challenges/"
-    results = []
-    try:
-        from playwright.sync_api import sync_playwright
-
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page(user_agent=HEADERS["User-Agent"])
-            page.goto(url, timeout=REQUEST_TIMEOUT * 1000, wait_until="networkidle")
-            try:
-                page.wait_for_selector(
-                    "a[href*='/challenges/hackathon/'], "
-                    "a[href*='/challenges/competitive/'], "
-                    "a[href*='/challenges/college/']",
-                    timeout=10000,
-                )
-            except Exception:
-                pass  # fall through and parse whatever rendered
-            html = page.content()
-            browser.close()
-
-        soup = BeautifulSoup(html, "lxml")
-        seen_urls = set()
-        for a in soup.find_all("a", href=True):
-            match = HACKEREARTH_CARD_HREF_RE.match(a["href"])
-            if not match:
-                continue
-            link = "https://www.hackerearth.com" + match.group(1)
-            if link in seen_urls:
-                continue
-
-            title = a.get_text(" ", strip=True)
-            if not title:
-                continue
-            seen_urls.add(link)
-
-            slug = link.rstrip("/").split("/")[-1]
-            results.append({
-                "source": "HackerEarth",
-                "id": f"hackerearth-{slug}",
-                "title": title,
-                "url": link,
-                "deadline": None,
-                "prize": None,
-                "themes": [],
-            })
-    except ImportError:
-        print("[hackerearth] failed: playwright not installed — run "
-              "`pip install playwright && playwright install --with-deps chromium`")
-    except Exception as e:
-        print(f"[hackerearth] failed: {e}")
-    return results
-
-
 def fetch_all_live():
     results = []
     results += fetch_devpost()
     results += fetch_mlh()
     results += fetch_unstop()
-    results += fetch_hackerearth()
     return results
 
 
